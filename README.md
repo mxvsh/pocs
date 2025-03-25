@@ -14,7 +14,7 @@ A proof-of-concept application demonstrating efficient file streaming to S3 thro
 
 ## Prerequisites
 
-- Node.js (or Bun runtime)
+- Bun (https://bun.sh)
 - S3-compatible storage (AWS S3 or compatible services)
 - Environment variables configured
 
@@ -35,9 +35,6 @@ S3_ENDPOINT=your_s3_endpoint
 ```bash
 # Using Bun (recommended)
 bun install
-
-# Using npm
-npm install
 ```
 
 ## Running the Application
@@ -45,9 +42,6 @@ npm install
 ```bash
 # Using Bun
 bun run index.ts
-
-# Using npm
-npm start
 ```
 
 The application will be available at `http://localhost:3000`
