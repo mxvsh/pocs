@@ -1,0 +1,203 @@
+<div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-md dark:shadow-gray-700 p-6">
+    <h1 class="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">File Upload</h1>
+    
+    <form id="uploadForm" class="space-y-4">
+        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-blue-500 dark:hover:border-blue-400 transition-colors duration-200">
+            <input type="file" 
+                   name="file" 
+                   id="file" 
+                   class="w-full text-sm text-gray-500 dark:text-gray-400
+                          file:mr-4 file:py-2 file:px-4
+                          file:rounded-full file:border-0
+                          file:text-sm file:font-semibold
+                          file:bg-blue-50 file:text-blue-700
+                          dark:file:bg-blue-900 dark:file:text-blue-300
+                          hover:file:bg-blue-100 dark:hover:file:bg-blue-800
+                          transition-colors duration-200"
+                   required>
+            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                File size must be between 5KB and 10MB
+            </p>
+        </div>
+        
+        <!-- Progress bar (hidden by default) -->
+        <div id="progressContainer" class="hidden">
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-2">
+                <div id="progressBar" 
+                     class="bg-blue-500 dark:bg-blue-600 h-2.5 rounded-full transition-all duration-150"
+                     style="width: 0%">
+                </div>
+            </div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 text-center">
+                <span id="progressText">0%</span> uploaded
+            </div>
+        </div>
+        
+        <button type="submit" 
+                class="w-full bg-blue-500 text-white py-2 px-4 rounded-lg
+                       hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 
+                       transition duration-200">
+            Upload File
+        </button>
+    </form>
+
+    <div id="message" class="mt-4 text-center hidden">
+        <p class="text-green-500 dark:text-green-400"></p>
+        <p id="errorDetails" class="text-sm text-red-400 dark:text-red-300 mt-1 hidden"></p>
+    </div>
+
+    <!-- S3 URL Display Section (hidden by default) -->
+    <div id="urlContainer" class="mt-4 hidden">
+        <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-2">File URL:</h3>
+            <div class="flex items-center space-x-2">
+                <input type="text" 
+                       id="fileUrl" 
+                       class="flex-1 p-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100"
+                       readonly>
+                <button onclick="copyUrl()" 
+                        class="p-2 bg-gray-200 dark:bg-gray-600 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors duration-200">
+                    <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('file');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+
+    // Check file size before upload
+    if (file.size < 5 * 1024) { // 5KB minimum
+        showError('File is too small', 'Minimum file size is 5KB');
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB maximum
+        showError('File is too large', 'Maximum file size is 10MB');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Get UI elements
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const messageDiv = document.getElementById('message');
+    const errorDetails = document.getElementById('errorDetails');
+    const submitButton = document.querySelector('button[type="submit"]');
+    const urlContainer = document.getElementById('urlContainer');
+    const fileUrlInput = document.getElementById('fileUrl');
+
+    // Show progress bar and disable submit button
+    progressContainer.classList.remove('hidden');
+    submitButton.disabled = true;
+    submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+    messageDiv.classList.add('hidden');
+    errorDetails.classList.add('hidden');
+    urlContainer.classList.add('hidden');
+
+    // Create XMLHttpRequest
+    const xhr = new XMLHttpRequest();
+
+    // Upload progress event
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percentComplete + '%';
+            progressText.textContent = percentComplete + '%';
+        }
+    });
+
+    // Upload complete
+    xhr.addEventListener('load', () => {
+        const response = JSON.parse(xhr.responseText);
+        
+        if (xhr.status === 200) {
+            messageDiv.querySelector('p').textContent = response.message;
+            messageDiv.querySelector('p').classList.remove('text-red-500', 'dark:text-red-400');
+            messageDiv.querySelector('p').classList.add('text-green-500', 'dark:text-green-400');
+            errorDetails.classList.add('hidden');
+            
+            // Show and populate the URL
+            fileUrlInput.value = response.fileUrl;
+            urlContainer.classList.remove('hidden');
+        } else {
+            showError(response.error, response.details);
+        }
+        
+        // Reset UI
+        progressContainer.classList.add('hidden');
+        submitButton.disabled = false;
+        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        messageDiv.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = '0%';
+    });
+
+    // Upload error
+    xhr.addEventListener('error', () => {
+        showError('An error occurred while uploading the file');
+        
+        // Reset UI
+        progressContainer.classList.add('hidden');
+        submitButton.disabled = false;
+        submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        messageDiv.classList.remove('hidden');
+        urlContainer.classList.add('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = '0%';
+    });
+
+    // Send the request
+    xhr.open('POST', '/upload', true);
+    xhr.send(formData);
+});
+
+// Helper function to show errors
+function showError(message, details = '') {
+    const messageDiv = document.getElementById('message');
+    const errorDetails = document.getElementById('errorDetails');
+    
+    messageDiv.querySelector('p').textContent = message;
+    messageDiv.querySelector('p').classList.remove('text-green-500', 'dark:text-green-400');
+    messageDiv.querySelector('p').classList.add('text-red-500', 'dark:text-red-400');
+    
+    if (details) {
+        errorDetails.textContent = details;
+        errorDetails.classList.remove('hidden');
+    } else {
+        errorDetails.classList.add('hidden');
+    }
+    
+    messageDiv.classList.remove('hidden');
+}
+
+// Copy URL function
+function copyUrl() {
+    const fileUrl = document.getElementById('fileUrl');
+    fileUrl.select();
+    document.execCommand('copy');
+    
+    // Show a brief "Copied!" tooltip or message if you want
+    const copyButton = fileUrl.nextElementSibling;
+    const originalBg = copyButton.classList.contains('dark:bg-gray-600') ? 'dark:bg-gray-600' : 'bg-gray-200';
+    
+    copyButton.classList.remove(originalBg);
+    copyButton.classList.add('bg-green-500', 'dark:bg-green-600');
+    
+    setTimeout(() => {
+        copyButton.classList.remove('bg-green-500', 'dark:bg-green-600');
+        copyButton.classList.add(originalBg);
+    }, 1000);
+}</script> 
