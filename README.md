@@ -33,14 +33,12 @@ S3_ENDPOINT=your_s3_endpoint
 ## Installation
 
 ```bash
-# Using Bun (recommended)
 bun install
 ```
 
 ## Running the Application
 
 ```bash
-# Using Bun
 bun run index.ts
 ```
 
