@@ -108,6 +108,10 @@ function emojiToAsciiArt(emoji, width, height) {
 - Emoji Mart for emoji selection
 - html-to-image for export functionality
 
+## Credits
+
+- [Junaid Ahmed](https://github.com/ajstudd) for the idea
+
 ## License
 
 MIT
