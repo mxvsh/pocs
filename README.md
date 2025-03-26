@@ -12,3 +12,11 @@ Each proof of concept is stored in its own separate branch. You can switch betwe
 This is a simple proof of concept for streaming a file to S3 directly from a browser but through a Node.js backend.
 
 ---
+
+## Emoji to ASCII
+
+[Check out the branch](https://github.com/mxvsh/pocs/tree/emoji-to-ascii)
+
+This is a simple proof of concept for converting an emoji to an ASCII art.
+
+---
