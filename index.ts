@@ -33,7 +33,9 @@ app.post('/upload', async (req: Request, res: Response): Promise<void> => {
 			return;
 		}
 
-		const filename = (req.headers['x-file-name'] as string) || 'unknown-file';
+		const filename =
+			Buffer.from(req.headers['x-file-name'] as string, 'base64').toString() ||
+			'unknown-file';
 		const mimetype = req.headers['content-type'];
 
 		// Stream directly to S3
@@ -62,4 +64,9 @@ app.post('/upload', async (req: Request, res: Response): Promise<void> => {
 
 app.listen(port, () => {
 	console.log(`Server running at http://localhost:${port}`);
+});
+
+process.on('SIGINT', () => {
+	console.log('SIGINT signal received');
+	process.exit(0);
 });

@@ -161,6 +161,7 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
 
     // Send the request
     xhr.open('POST', '/upload', true);
+    xhr.setRequestHeader('x-file-name', btoa(file.name));
     xhr.send(formData);
 });
 
