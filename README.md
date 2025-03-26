@@ -13,9 +13,9 @@ This is a simple proof of concept for streaming a file to S3 directly from a bro
 
 ---
 
-## Emoji to ASCII
+## Emoji to Art
 
-[Check out the branch](https://github.com/mxvsh/pocs/tree/emoji-to-ascii)
+[Check out the branch](https://github.com/mxvsh/pocs/tree/emoji-to-art)
 
 This is a simple proof of concept for converting an emoji to an ASCII art.
 
